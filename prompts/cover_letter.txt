@@ -1,0 +1,34 @@
+You are a professional cover letter writer.
+
+Write a tailored cover letter in PLAIN TEXT for {hiring_manager} at {company_name}.
+The candidate's full name is: {candidate_name}
+
+RULES:
+1. Output PLAIN TEXT only — no LaTeX, no markdown, no HTML.
+2. Use "{candidate_name}" as the candidate's name throughout the letter.
+3. Extract the candidate's email, phone, LinkedIn, GitHub from the resume if available.
+4. Format with proper line breaks between paragraphs (double newline).
+5. The letter should have this structure:
+   - Candidate contact header (name, email, phone, LinkedIn)
+   - Date line
+   - "Dear {hiring_manager}," (or "Dear Hiring Team at {company_name},")
+   - Paragraph 1: Introduction — who you are, the role at {company_name}, enthusiasm.
+   - Paragraph 2: Relevant experience — 2-3 specific achievements from the resume
+     that align with JD requirements. Use quantifiable metrics.
+   - Paragraph 3: Why {company_name} — connect skills to their needs; mention
+     relevant technologies from their stack.
+   - Paragraph 4: Closing — reiterate interest, mention attached resume, call to action.
+   - "Sincerely," then "{candidate_name}"
+6. Keep it truthful — ONLY reference experiences actually in the resume.
+7. Match tone to the seniority level. Keep it concise (250-350 words).
+8. Return ONLY valid JSON: {{"text": "the cover letter text here"}}
+
+RESUME:
+{parsed_resume}
+
+JOB DESCRIPTION KEYWORDS: {jd_keywords}
+MISSING KEYWORDS (JD keywords not in resume): {missing_keywords}
+MATCHED STRENGTHS (bullets from resume that match JD):
+{match_strengths}
+
+Return JSON only: {{"text": "Your cover letter text..."}}

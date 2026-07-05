@@ -1,0 +1,133 @@
+{
+  "resume_id": "resume_resume_694bb642",
+  "summary": null,
+  "skills": [
+    "Go (Golang)",
+    "C/C++",
+    "Python",
+    "JavaScript",
+    "REST APIs",
+    "gRPC",
+    "Microservices",
+    "Distributed Systems",
+    "Authentication",
+    "Authorization",
+    "PostgreSQL",
+    "Redis",
+    "Elasticsearch",
+    "Docker",
+    "AWS",
+    "Linux",
+    "CI/CD",
+    "MQTT",
+    "Data Structures & Algorithms",
+    "OOP",
+    "System Design",
+    "Concurrency"
+  ],
+  "experience": [
+    {
+      "id": "exp_1",
+      "company": "BharatPe",
+      "role": "Software Developer | Backend & IoT Systems",
+      "duration": "Feb '25 - Present",
+      "bullets": [
+        {
+          "id": "exp_1_bullet_1",
+          "text": "Engineered an end-to-end Advertisement Playback Platform for IoT speaker devices, enabling B2B partners to onboard and configure time-bound ad campaigns (start/end date, playback rules), with distributed device-level fetching and scheduled execution across 800K+ merchant endpoints — establishing a scalable B2B-to-B2C monetization pipeline.",
+          "raw_latex": "\\item[$\\circ$] {Engineered an end-to-end \\textbf{Advertisement Playback Platform} for IoT speaker devices, enabling B2B partners to onboard and configure time-bound ad campaigns (start/end date, playback rules), with distributed device-level fetching and scheduled execution across \\textbf{800K+} merchant endpoints — establishing a scalable B2B-to-B2C monetization pipeline.}"
+        },
+        {
+          "id": "exp_1_bullet_2",
+          "text": "Architected and implemented a Prepaid Rental Plans system for IoT speaker devices serving 1M+ merchants, enabling multi-month upfront subscriptions and transitioning from recurring billing to advance revenue capture, improving cash-flow visibility and reducing payment defaults.",
+          "raw_latex": "\\item[$\\circ$] {Architected and implemented a \\textbf{Prepaid Rental Plans} system for IoT speaker devices serving \\textbf{1M+} merchants, enabling multi-month upfront subscriptions and transitioning from recurring billing to advance revenue capture, improving cash-flow visibility and reducing payment defaults.}"
+        },
+        {
+          "id": "exp_1_bullet_3",
+          "text": "Led end-to-end Speaker-side integration of a centralized Service Request (SR) Module, consolidating replace and return workflows across Swipe and Speaker platforms, reducing escalation resolution time by 50% and lowering FSE training overhead through platform unification.",
+          "raw_latex": "\\item[$\\circ$] {Led end-to-end Speaker-side integration of a centralized \\textbf{Service Request (SR) Module}, consolidating replace and return workflows across Swipe and Speaker platforms, reducing escalation resolution time by \\textbf{50\\%} and lowering FSE training overhead through platform unification.}"
+        },
+        {
+          "id": "exp_1_bullet_4",
+          "text": "Enhanced core firmware architecture across proprietary IoT payment devices, reducing packet-level communication failures by 70% and significantly improving sync reliability and OTA update stability in production environments.",
+          "raw_latex": "\\item[$\\circ$] {Enhanced core \\textbf{firmware architecture} across proprietary IoT payment devices, reducing packet-level communication failures by \\textbf{70\\%} and significantly improving sync reliability and OTA update stability in production environments.}"
+        }
+      ]
+    },
+    {
+      "id": "exp_2",
+      "company": "SOCTR",
+      "role": "Back End Developer Intern",
+      "duration": "Oct '23 - Dec '24",
+      "bullets": [
+        {
+          "id": "exp_2_bullet_1",
+          "text": "Designed and deployed microservices with Go and Elasticsearch, improving concurrent data processing efficiency by 40%.",
+          "raw_latex": "\\item[$\\circ$] {Designed and deployed microservices with \\textbf{Go} and \\textbf{Elasticsearch}, improving concurrent data processing efficiency by 40\\%.}"
+        },
+        {
+          "id": "exp_2_bullet_2",
+          "text": "Containerized and deployed 15+ cloud applications on AWS using Docker, managing Linux-based production environments and CI/CD workflows.",
+          "raw_latex": "\\item[$\\circ$] {Containerized and deployed 15+ cloud applications on \\textbf{AWS} using \\textbf{Docker}, managing Linux-based production environments and CI/CD workflows.}"
+        }
+      ]
+    },
+    {
+      "id": "exp_3",
+      "company": "Cobotiks",
+      "role": "Software Developer Intern",
+      "duration": "Jul '24 - Oct '24",
+      "bullets": [
+        {
+          "id": "exp_3_bullet_1",
+          "text": "Integrated Auth0-based authentication and role-based authorization for multi-tenant architecture.",
+          "raw_latex": "\\item[$\\circ$] {Integrated \\textbf{Auth0}-based authentication and role-based authorization for multi-tenant architecture.}"
+        },
+        {
+          "id": "exp_3_bullet_2",
+          "text": "Implemented gRPC-based inter-service communication using WSGI/ASGI, optimizing asynchronous request handling and backend performance.",
+          "raw_latex": "\\item[$\\circ$] {Implemented gRPC-based inter-service communication using \\textbf{WSGI/ASGI}, optimizing asynchronous request handling and backend performance.}"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj_1",
+      "name": "Mini CRM (Customer Relationship Model)",
+      "bullets": [
+        {
+          "id": "proj_1_bullet_1",
+          "text": "Built a scalable campaign management system using Go, PostgreSQL, and Redis Pub-Sub, enabling real-time personalized messaging and audience segmentation.",
+          "raw_latex": "\\item[$\\circ$] {Built a scalable campaign management system using Go, PostgreSQL, and \\textbf{Redis Pub-Sub}, enabling real-time personalized messaging and audience segmentation.}"
+        },
+        {
+          "id": "proj_1_bullet_2",
+          "text": "Implemented efficient database operations and real-time communication features to enhance user experience and system performance.",
+          "raw_latex": "\\item[$\\circ$] {Implemented efficient database operations and real-time communication features to enhance user experience and system performance.}"
+        }
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu_1",
+      "institution": "Netaji Subhas University of Technology",
+      "degree": "B.Tech in Electrical Engineering - 7.22",
+      "details": "July '21 - May '25"
+    },
+    {
+      "id": "edu_2",
+      "institution": "Bharatmata Saraswati Bal Mandir",
+      "degree": "All India Senior School Certificate Examination conducted by CBSE",
+      "details": "Apr '19 - Mar '21"
+    },
+    {
+      "id": "edu_3",
+      "institution": "St. Mary's Convent School",
+      "degree": "Secondary School Certificate (Percentage: 93.5%)",
+      "details": "Apr '07 - Mar '19"
+    }
+  ],
+  "display_name": "master_resume_1"
+}
