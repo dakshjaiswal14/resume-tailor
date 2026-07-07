@@ -70,13 +70,23 @@ def apply_suggestions_to_resume(
                 "error": str(e),
             })
 
-    # Save tailored .tex
+    # --- Post-generation integrity check ---
+    from app.utils.latex_utils import validate_and_fix_tex
+
+    validation = validate_and_fix_tex(updated_tex)
+    updated_tex = validation["tex"]
+
+    # Save tailored .tex (after validation fixes)
     with open(generated_tex_path, "w", encoding="utf-8") as f:
         f.write(updated_tex)
 
     # Save updated parsed JSON with applied-suggestions metadata
     generated_json = parsed_resume.copy()
     generated_json["applied_suggestions"] = updated_bullets
+    generated_json["validation"] = {
+        "fixes_applied": validation["fixes"],
+        "errors_remaining": validation["errors"],
+    }
     with open(generated_json_path, "w", encoding="utf-8") as f:
         json.dump(generated_json, f, indent=2, ensure_ascii=False)
 
@@ -87,6 +97,10 @@ def apply_suggestions_to_resume(
         "applied_count": applied_count,
         "total_requested": len(accepted_suggestions),
         "applied_suggestions": updated_bullets,
+        "validation": {
+            "fixes_applied": validation["fixes"],
+            "errors_remaining": validation["errors"],
+        },
         "status": "success" if applied_count > 0 else "failed",
     }
 

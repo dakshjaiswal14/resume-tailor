@@ -10,3 +10,4 @@ resumes/
 venv/
 .claude/
 *.pyc
+applications.xlsx

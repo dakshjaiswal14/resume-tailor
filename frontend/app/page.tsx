@@ -47,6 +47,7 @@ interface ApplyResult {
   updated_tex_path: string;
   applied_count: number;
   applied_suggestions: { bullet_id: string; status: string }[];
+  validation?: { fixes_applied: string[]; errors_remaining: string[] };
 }
 
 type Step = "resume" | "jd" | "review" | "result";
@@ -114,6 +115,12 @@ export default function Home() {
   const [candidateName, setCandidateName] = useState("");
   const [candidateLoading, setCandidateLoading] = useState(true);
 
+  // application tracker
+  const [showTracker, setShowTracker] = useState(false);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [trackerLoading, setTrackerLoading] = useState(false);
+  const [trackSuccess, setTrackSuccess] = useState("");
+
   // delete
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [clearAllConfirm, setClearAllConfirm] = useState(false);
@@ -175,6 +182,67 @@ export default function Home() {
     setStep("resume");
     setClearAllConfirm(false);
   };
+
+  // ---- application tracker ----
+  const fetchApplications = async () => {
+    setTrackerLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/applications`);
+      if (res.ok) setApplications(await res.json());
+    } catch { /* ignore */ }
+    setTrackerLoading(false);
+  };
+
+  const handleTrackApplication = async () => {
+    if (!jdResult) return;
+    // Extract company name from JD analysis or cover letter
+    let company = "";
+    const jdLower = jdText.toLowerCase();
+    // Try to extract from JD
+    const aboutMatch = jdLower.match(/(?:about|at|join)\s+([A-Z][A-Za-z0-9]+(?:\s[A-Z][A-Za-z0-9]+){0,3})/);
+    if (aboutMatch) company = aboutMatch[1];
+    if (!company) company = "Unknown";
+
+    let position = "";
+    const titleMatch = jdText.match(/^(.+?)(?:\n|$)/);
+    if (titleMatch) position = titleMatch[1].trim().substring(0, 80);
+
+    try {
+      await fetch(`${API_BASE}/applications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company,
+          position,
+          resume_id: parsedResume?.resume_id || "",
+          cover_letter_text: coverLetterText,
+        }),
+      });
+      setTrackSuccess("Application tracked!");
+      setTimeout(() => setTrackSuccess(""), 3000);
+    } catch { /* ignore */ }
+  };
+
+  const handleUpdateStatus = async (appId: string, status: string) => {
+    try {
+      await fetch(`${API_BASE}/applications/${appId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      // Refresh
+      setApplications((prev) =>
+        prev.map((a) => (a.id === appId ? { ...a, status } : a))
+      );
+    } catch { /* ignore */ }
+  };
+
+  const handleDeleteApplication = async (appId: string) => {
+    try { await fetch(`${API_BASE}/applications/${appId}`, { method: "DELETE" }); } catch { /* ignore */ }
+    setApplications((prev) => prev.filter((a) => a.id !== appId));
+  };
+
+  const openTracker = () => { setShowTracker(true); fetchApplications(); };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -323,7 +391,16 @@ export default function Home() {
       <header className="mb-8 text-center">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">RoleTailor <span className="text-indigo-600">AI</span></h1>
         <p className="text-zinc-500 mt-1 text-sm">Tailor your LaTeX resume & cover letter to any job description</p>
-        {/* Candidate name */}
+        {/* Top bar: candidate name + applications */}
+        <div className="mt-3 flex items-center justify-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-zinc-400 font-medium">Candidate:</label>
+            <input type="text" className="w-40 px-3 py-1.5 text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-center focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Your Name" value={candidateName} onChange={(e) => saveCandidateName(e.target.value)} />
+          </div>
+          <button onClick={openTracker} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 transition-colors">
+            📋 Applications
+          </button>
+        </div>
         <div className="mt-4 flex items-center justify-center gap-2">
           <label className="text-xs text-zinc-400 font-medium">Candidate:</label>
           <input
@@ -505,8 +582,15 @@ export default function Home() {
         {step === "result" && (
           <div className="space-y-4">
             <div className="bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800 rounded-xl p-6 shadow-sm">
-              <h2 className="text-lg font-semibold">&check; Tailored Resume Ready</h2>
-              <p className="text-sm text-zinc-500 mt-1">{applyResult?.applied_count || 0} bullets updated</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">&check; Tailored Resume Ready</h2>
+                  <p className="text-sm text-zinc-500 mt-1">{applyResult?.applied_count || 0} bullets updated</p>
+                </div>
+                <button onClick={handleTrackApplication} className="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                  {trackSuccess || "📌 Track Application"}
+                </button>
+              </div>
             </div>
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-3"><h3 className="text-sm font-semibold">Tailored Resume LaTeX</h3>
@@ -532,6 +616,49 @@ export default function Home() {
             <button onClick={handleReset} className="w-full py-3 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 text-zinc-700 font-medium rounded-lg">Start Over</button>
           </div>
         )}
+
+        {/* Application Tracker Modal */}
+        {showTracker && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 pt-12 overflow-auto" onClick={() => setShowTracker(false)}>
+            <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-800 w-full max-w-4xl mx-4 mb-12" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between p-6 pb-4 border-b border-zinc-200 dark:border-zinc-800">
+                <h2 className="text-lg font-semibold">Application Tracker</h2>
+                <button onClick={() => setShowTracker(false)} className="text-zinc-400 hover:text-zinc-600 text-xl">&times;</button>
+              </div>
+              <div className="p-6 pt-4">
+                {trackerLoading ? <div className="flex items-center gap-2 text-sm text-zinc-400"><Spinner /> Loading...</div>
+                 : applications.length === 0 ? <p className="text-sm text-zinc-400 italic">No applications tracked yet. Click "Track Application" after tailoring a resume to add one.</p>
+                 : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b border-zinc-200 dark:border-zinc-700 text-left text-xs text-zinc-400 uppercase"><th className="py-2 pr-3">Company</th><th className="py-2 pr-3">Position</th><th className="py-2 pr-3">Date</th><th className="py-2 pr-3">Status</th><th className="py-2 pr-3">Resume</th><th className="py-2"></th></tr></thead><tbody>
+                  {applications.map((a) => (
+                    <tr key={a.id} className="border-b border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-950">
+                      <td className="py-2 pr-3 font-medium">{a.company}</td>
+                      <td className="py-2 pr-3 text-zinc-500 max-w-[200px] truncate">{a.position}</td>
+                      <td className="py-2 pr-3 text-zinc-400 text-xs">{a.date_applied}</td>
+                      <td className="py-2 pr-3">
+                        <select value={a.status} onChange={(e) => handleUpdateStatus(a.id, e.target.value)}
+                          className={`text-xs px-2 py-1 rounded-full font-medium border-0 outline-none cursor-pointer ${
+                            a.status==="Applied"?"bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400":
+                            a.status==="Phone Screen"?"bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400":
+                            a.status==="Technical"?"bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400":
+                            a.status==="Onsite"?"bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400":
+                            a.status==="Offer"?"bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400":
+                            a.status==="Accepted"?"bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400":
+                            a.status==="Rejected"?"bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400":
+                            "bg-zinc-100 text-zinc-600"}`}>
+                          {["Applied","Phone Screen","Technical","Onsite","Offer","Accepted","Rejected","Withdrawn"].map(s=><option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </td>
+                      <td className="py-2 pr-3 text-xs text-zinc-400">{a.resume_id ? a.resume_id.replace("resume_","").substring(0,12) : "-"}</td>
+                      <td className="py-2"><button onClick={()=>handleDeleteApplication(a.id)} className="text-xs text-zinc-400 hover:text-red-500">&times;</button></td>
+                    </tr>
+                  ))}
+                </tbody></table></div>}
+                <p className="text-xs text-zinc-400 mt-4">Data stored in <code className="bg-zinc-100 dark:bg-zinc-800 px-1 rounded">applications.xlsx</code> — open directly in Excel.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
