@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from app.routes import resume, jd
+from app.routes import resume, jd, applications
 
 # --- Env ---
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -25,6 +25,7 @@ app.add_middleware(
 
 app.include_router(resume.router)
 app.include_router(jd.router)
+app.include_router(applications.router)
 
 
 @app.get("/")

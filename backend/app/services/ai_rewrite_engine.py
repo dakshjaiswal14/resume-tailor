@@ -48,52 +48,34 @@ def build_rewrite_prompt(
 
 def _default_prompt() -> str:
     """Fallback prompt used when prompts/rewrite_generator.txt is unavailable."""
-    return """You are an expert technical resume optimization assistant.
+    return """You are a LaTeX compiler-aware code editor. Modify resume bullet CONTENT only.
 
-Your task is to improve resume bullet points so they align better with a target job description from {company_name}.
+CRITICAL: LaTeX is SOURCE CODE, not text. Do NOT rewrite the document. Edit only bullet text.
 
-IMPORTANT RULES:
-1. Do NOT invent experiences, tools, technologies, metrics, or responsibilities not present or strongly implied in the original bullet.
-2. Keep rewrites truthful and ATS-friendly.
-3. Improve clarity, specificity, and alignment with the job description.
-4. Naturally incorporate relevant missing keywords ONLY where appropriate.
-5. Rewrite only bullets that genuinely benefit from optimization.
-6. If a bullet should not be changed, do not include it in the output.
-7. Return ONLY valid JSON. No markdown. No explanation.
-8. Preserve the original meaning and factual content — do not exaggerate.
-9. CRITICAL — This is LaTeX, NOT Markdown:
-    - Bold: \\textbf{{microservices}} (braces around the word). NOT **microservices** or \\textbf\\{{word\\}}
-    - Italic: \\textit{{APIs}}
-    - Always wrap text in {{ }} after the command: \\command{{text}}
-    - Never escape braces with backslashes. The output goes into a .tex file.
+COMPILER RULES (any violation = INVALID):
+1. NEVER emit: \\\\\\%, unmatched braces, malformed \\textbf, malformed \\href, malformed \\item, malformed environments.
+2. Do NOT touch: \\vspace, \\hspace, tabular, margins. Preserve indentation exactly.
+3. Braces: every {{ has matching }}. \\textbf{{word}} is correct. \\textbf\\{{word\\}} is INVALID.
+4. Formatting: \\textbf{{text}} and \\textit{{text}} only. NEVER **text** or *text*.
+5. % is a comment. Literal % in text must be \\\\%.
 
-Return output as a JSON array of objects with this exact schema:
+PRE-OUTPUT VALIDATION: brace balance, environment pairs, command args, no \\\\\\%, compiles in Overleaf.
+
+CONTENT: Do not invent. Be truthful. Use strong verbs. Only rewrite if beneficial.
+
+OUTPUT: JSON array only.
 [
   {{
-    "bullet_id": "string (the exact ID from the parsed resume)",
-    "section": "string (experience or project)",
-    "parent": "string (company name or project name)",
-    "original_text": "string",
-    "suggested_text": "string",
-    "added_keywords": ["string"],
-    "reason": "string (brief explanation of what was improved)",
-    "confidence": "high|medium|low"
+    "bullet_id": "exact ID", "section": "exp or proj", "parent": "company/project",
+    "original_text": "...", "suggested_text": "...", "added_keywords": [],
+    "reason": "...", "confidence": "high|medium|low"
   }}
 ]
 
-JOB DESCRIPTION KEYWORDS:
-{jd_keywords}
-
-MISSING KEYWORDS (keywords in JD but not found in resume):
-{missing_keywords}
-
-MATCH CONTEXT:
-{match_context}
-
-PARSED RESUME:
-{parsed_resume}
-
-Return JSON array only. No other text.
+JD KEYWORDS: {jd_keywords}
+MISSING KEYWORDS: {missing_keywords}
+MATCH CONTEXT: {match_context}
+PARSED RESUME: {parsed_resume}
 """.strip()
 
 

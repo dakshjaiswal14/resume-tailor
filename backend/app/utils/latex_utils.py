@@ -255,35 +255,130 @@ def _guess_arg_count(macro_name: str) -> int:
 def normalize_latex_formatting(text: str) -> str:
     """
     Fix common LaTeX formatting errors from AI-generated text:
+    - Nested \\item wrapper (AI returns full bullet, patcher wraps again)
+    - Double-backslash \\\\% → \\%
     - Escaped braces: \\textbf\\{{word\\}} → \\textbf{{word}}
     - Markdown bold: **word** → \\textbf{{word}}
-    - Markdown italic: *word* → \\textit{{word}}
     """
     if not text:
         return text
 
-    # 1. Fix escaped braces inside LaTeX commands
-    #    \textbf\{word\}  →  \textbf{word}
-    #    \textit\{word\}  →  \textit{word}
+    # 0. STRIP OUTER \item WRAPPER (only if paired — both opening and closing exist)
+    #    AI sometimes returns the full \item[$\circ$] {text} but patcher wraps again.
+    #    Only strip the closing } if we actually stripped an opening \item wrapper.
+    stripped_opening = False
+    for pattern in [r"^\\item\s*\[\$\\circ\$\]\s*\{\s*", r"^\\item\s*\{\s*"]:
+        m = re.match(pattern, text)
+        if m:
+            text = text[m.end():]
+            stripped_opening = True
+            break
+    if stripped_opening:
+        # Only strip trailing } if we removed the opening wrapper
+        text = re.sub(r"\s*\}\s*$", "", text)
+
+    # 1. FATAL: \\% → \%  (double backslash before % comments out closing brace)
+    text = re.sub(r"\\\\%", r"\\%", text)
+
+    # 2. Fix escaped braces inside LaTeX formatting commands
     for cmd in ["textbf", "textit", "emph", "underline", "texttt", "textsc"]:
-        # Pattern: \cmd\{  →  \cmd{
+        # \cmd\{word\} → \cmd{word}
         text = re.sub(rf"\\{cmd}\\{{", rf"\\{cmd}{{", text)
-        # Pattern: \cmd{...\}  →  fix the closing \}
-        # This is trickier — find \cmd{...\} and fix the \}
         text = re.sub(
             rf"(\\{cmd}\{{[^}}]+?)\\}}",
             rf"\1}}",
             text,
         )
 
-    # 2. Fix Markdown bold: **text** → \textbf{text}
+    # 3. Fix Markdown bold: **text** → \textbf{text}
     text = re.sub(r"\*\*(.+?)\*\*", r"\\textbf{\1}", text)
 
-    # 3. Fix Markdown italic (but not bullet * markers): *text* → \textit{text}
-    # Only match when * is not at start of line (bullet marker)
+    # 4. Fix Markdown italic (but not bullet * markers)
     text = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"\\textit{\1}", text)
 
+    # 5. Fix \hspace{...} → \hfill for large right-alignment hacks
+    text = re.sub(r"\\hspace\{1[0-9]\.[0-9]+cm\}", r"\\hfill", text)
+
     return text
+
+
+# ---------------------------------------------------------------------------
+# Post-generation integrity check — validates & auto-fixes the complete .tex
+# ---------------------------------------------------------------------------
+
+def validate_and_fix_tex(tex_content: str) -> dict:
+    """
+    Final integrity check on the complete .tex file after all patches are applied.
+    Auto-fixes common errors and returns a report of what was found/fixed.
+
+    Returns: {"tex": fixed_content, "fixes": [...], "errors": [...]}
+    """
+    fixes = []
+    errors = []
+    fixed = tex_content
+
+    # ---- 1. Fix \\\\% → \\% everywhere in the document ----
+    count = fixed.count(chr(92) + chr(92) + '%')
+    if count > 0:
+        fixed = fixed.replace(chr(92) + chr(92) + '%', chr(92) + '%')
+        fixes.append(f"Fixed {count} occurrence(s) of double-backslash-percent to single")
+
+    # ---- 2. Fix escaped braces \\{ and \\} inside text ----
+    for cmd in ["textbf", "textit", "emph", "underline", "texttt", "textsc"]:
+        pattern_open = chr(92) + cmd + chr(92) + '{'   # \textbf\{
+        if pattern_open in fixed:
+            count = fixed.count(pattern_open)
+            correct = chr(92) + cmd + '{'
+            fixed = fixed.replace(pattern_open, correct)
+            fixes.append(f"Fixed {count} escaped open-brace in \\{cmd}")
+
+    # ---- 3. Fix Markdown bold: **text** → \\textbf{text} ----
+    md_bold = re.findall(r"\*\*(.+?)\*\*", fixed)
+    if md_bold:
+        for match in set(md_bold):
+            fixed = fixed.replace(f"**{match}**", f"\\textbf{{{match}}}")
+        fixes.append(f"Fixed {len(md_bold)} Markdown **bold** to \\textbf{{}}")
+
+    # ---- 4. Check brace balance ----
+    open_count = fixed.count('{')
+    close_count = fixed.count('}')
+    if open_count != close_count:
+        errors.append(
+            f"Brace mismatch: {open_count} open vs {close_count} close "
+            f"(diff={open_count - close_count:+d}). Check for missing/extra braces."
+        )
+
+    # ---- 5. Check \\begin / \\end pairs ----
+    begins = re.findall(r"\\begin\{([^}]+)\}", fixed)
+    ends = re.findall(r"\\end\{([^}]+)\}", fixed)
+    begin_counts = {}
+    end_counts = {}
+    for b in begins:
+        begin_counts[b] = begin_counts.get(b, 0) + 1
+    for e in ends:
+        end_counts[e] = end_counts.get(e, 0) + 1
+    for env in set(list(begin_counts.keys()) + list(end_counts.keys())):
+        bc = begin_counts.get(env, 0)
+        ec = end_counts.get(env, 0)
+        if bc != ec:
+            errors.append(
+                f"Environment '{env}': {bc} \\begin vs {ec} \\end"
+            )
+
+    # ---- 6. Check \\end{document} exists ----
+    if r'\end{document}' not in fixed:
+        errors.append("Missing \\end{document} — file will not compile")
+
+    # ---- 7. Check no \item outside itemize ----
+    # (basic check — look for \item not preceded by \begin{itemize} on same line or prior)
+    items = re.findall(r"\\item", fixed)
+    if items:
+        itemize_envs = len(re.findall(r"\\begin\{itemize\}", fixed))
+        if len(items) > 0 and itemize_envs == 0:
+            errors.append(f"Found {len(items)} \\item commands but no itemize environments")
+
+    return {"tex": fixed, "fixes": fixes, "errors": errors}
+
 
 
 # ---------------------------------------------------------------------------
