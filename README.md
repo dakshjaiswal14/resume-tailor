@@ -90,15 +90,13 @@ pnpm install
 **Terminal 1 — Backend:**
 ```bash
 cd backend
-source venv/bin/activate   # Mac
-# or: venv\Scripts\activate  # Windows
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Terminal 2 — Frontend:**
 ```bash
 cd frontend
-pnpm dev --port 3000
+npx next dev --port 3000
 ```
 
 ### 6. Open the app

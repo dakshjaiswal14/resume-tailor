@@ -96,6 +96,7 @@ export default function Home() {
   // suggestions
   const [acceptedIds, setAcceptedIds] = useState<Set<string>>(new Set());
   const [rejectedIds, setRejectedIds] = useState<Set<string>>(new Set());
+  const [suggestionHistory, setSuggestionHistory] = useState<{bullet_id: string; parent: string; original: string; suggested: string; action: 'accepted' | 'rejected'}[]>([]);
 
   // result
   const [applyResult, setApplyResult] = useState<ApplyResult | null>(null);
@@ -309,6 +310,17 @@ export default function Home() {
     if (!parsedResume || !jdResult) return;
     const accepted = jdResult.suggestions.filter((s) => acceptedIds.has(s.bullet_id)).map((s) => ({ bullet_id: s.bullet_id, new_text: s.suggested_text }));
     if (accepted.length === 0) { setApplyError("No suggestions accepted."); return; }
+
+    // Capture suggestion history for the result page
+    const history = jdResult.suggestions.map((s) => ({
+      bullet_id: s.bullet_id,
+      parent: s.parent,
+      original: s.original_text,
+      suggested: s.suggested_text,
+      action: acceptedIds.has(s.bullet_id) ? 'accepted' as const : 'rejected' as const,
+    }));
+    setSuggestionHistory(history);
+
     setApplyLoading(true); setApplyError("");
     try {
       const res = await fetch(`${API_BASE}/resume/apply-suggestions`, {
@@ -378,6 +390,7 @@ export default function Home() {
     setAcceptedIds(new Set()); setRejectedIds(new Set());
     setApplyResult(null); setTailoredTex("");
     setCoverLetterText(""); setCoverError(""); setApplyError(""); setResumeError(""); setJdError("");
+    setSuggestionHistory([]);
     fetchResumeList();
   };
 
@@ -499,7 +512,7 @@ export default function Home() {
                 }`}>
                   <input type="file" accept=".tex,text/plain" onChange={handleFileChange} className="hidden" />
                   {resumeFileName ? (
-                    <div className="text-center"><span className="text-emerald-600 font-medium text-sm">&check; {resumeFileName}</span>
+                    <div className="text-center"><span className="text-emerald-600 font-medium text-sm">✓ {resumeFileName}</span>
                       <button type="button" onClick={(e) => { e.preventDefault(); setResumeFile(null); setResumeFileName(""); }} className="block text-xs text-zinc-400 hover:text-red-500 mt-1 mx-auto">Remove</button></div>
                   ) : <div className="text-center"><svg className="mx-auto h-8 w-8 text-zinc-400 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                     <span className="text-sm text-zinc-500"><span className="text-indigo-600 font-medium">Upload a .tex file</span> or drag & drop</span></div>}
@@ -584,7 +597,7 @@ export default function Home() {
             <div className="bg-white dark:bg-zinc-900 border border-emerald-200 dark:border-emerald-800 rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold">&check; Tailored Resume Ready</h2>
+                  <h2 className="text-lg font-semibold">✓ Tailored Resume Ready</h2>
                   <p className="text-sm text-zinc-500 mt-1">{applyResult?.applied_count || 0} bullets updated</p>
                 </div>
                 <button onClick={handleTrackApplication} className="px-4 py-2 text-sm font-medium rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
@@ -592,6 +605,33 @@ export default function Home() {
                 </button>
               </div>
             </div>
+
+            {/* Changes summary */}
+            {suggestionHistory.length > 0 && (
+              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
+                <h3 className="text-sm font-semibold mb-3">Changes Made ({suggestionHistory.filter(s => s.action === 'accepted').length} accepted, {suggestionHistory.filter(s => s.action === 'rejected').length} rejected)</h3>
+                <div className="max-h-64 overflow-y-auto space-y-3 pr-1">
+                  {suggestionHistory.map((s) => (
+                    <div key={s.bullet_id} className={`border rounded-lg p-3 text-sm ${
+                      s.action === 'accepted'
+                        ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/20'
+                        : 'border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 opacity-60'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
+                          s.action === 'accepted' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-zinc-200 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400'
+                        }`}>
+                          {s.action === 'accepted' ? '✓ Accepted' : '✗ Rejected'}
+                        </span>
+                        <span className="text-xs text-zinc-400">{s.parent}</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 line-through mb-1">{s.original}</p>
+                      <p className="text-xs text-zinc-900 dark:text-zinc-100">{s.suggested}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-3"><h3 className="text-sm font-semibold">Tailored Resume LaTeX</h3>
                 <div className="flex gap-2">
